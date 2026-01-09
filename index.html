@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BackRoad - Social Platform for Depth, Not Engagement</title>
+
+    <!-- Clerk SDK -->
+    <script src="https://cdn.clerk.dev/clerk-js/v4/clerk.js" async></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000000;
+            color: #FFFFFF;
+            line-height: 1.618;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 21px 34px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(13px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+        }
+
+        .header-logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #F5A623 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .auth-button {
+            padding: 13px 34px;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #F5A623 61.8%);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .auth-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 21px rgba(255, 29, 108, 0.4);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+        }
+
+        .user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid #FF1D6C;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .clerk-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 34px;
+            z-index: 2000;
+            min-width: 400px;
+        }
+
+        .clerk-modal.show {
+            display: block;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 89px 34px;
+            background: linear-gradient(135deg,
+                rgba(255, 29, 108, 0.1) 0%,
+                rgba(245, 166, 35, 0.1) 38.2%,
+                rgba(41, 121, 255, 0.1) 61.8%,
+                rgba(156, 39, 176, 0.1) 100%
+            );
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><circle cx="500" cy="500" r="400" fill="none" stroke="rgba(255,29,108,0.1)" stroke-width="2"/><circle cx="500" cy="500" r="300" fill="none" stroke="rgba(245,166,35,0.1)" stroke-width="2"/><circle cx="500" cy="500" r="200" fill="none" stroke="rgba(41,121,255,0.1)" stroke-width="2"/></svg>') center/cover;
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 800px;
+        }
+
+        .logo {
+            font-size: 89px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #F5A623 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 34px;
+        }
+
+        .tagline {
+            font-size: 34px;
+            font-weight: 600;
+            margin-bottom: 21px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 21px;
+            opacity: 0.8;
+            margin-bottom: 55px;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 21px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 21px 55px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #F5A623 61.8%);
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 13px 34px rgba(255, 29, 108, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #FF1D6C;
+            color: #FF1D6C;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 29, 108, 0.1);
+            transform: translateY(-3px);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 144px 34px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 55px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 89px;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #F5A623 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 34px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            padding: 34px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: #FF1D6C;
+            transform: translateY(-5px);
+            box-shadow: 0 13px 34px rgba(255, 29, 108, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 55px;
+            margin-bottom: 21px;
+        }
+
+        .feature-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 13px;
+            color: #F5A623;
+        }
+
+        .feature-desc {
+            font-size: 16px;
+            opacity: 0.8;
+            line-height: 1.618;
+        }
+
+        /* Comparison Section */
+        .comparison {
+            padding: 144px 34px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .comparison-table {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 13px;
+            overflow: hidden;
+        }
+
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .comparison-row:last-child {
+            border-bottom: none;
+        }
+
+        .comparison-cell {
+            padding: 21px;
+            text-align: center;
+        }
+
+        .comparison-header {
+            font-weight: 700;
+            font-size: 21px;
+        }
+
+        .comparison-cell:nth-child(1) {
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .comparison-cell:nth-child(3) {
+            background: rgba(255, 29, 108, 0.1);
+            color: #F5A623;
+        }
+
+        .check {
+            color: #00FF00;
+            font-size: 24px;
+        }
+
+        .cross {
+            color: #FF1D6C;
+            font-size: 24px;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 144px 34px;
+            text-align: center;
+        }
+
+        .cta-title {
+            font-size: 55px;
+            font-weight: 700;
+            margin-bottom: 34px;
+        }
+
+        .cta-text {
+            font-size: 21px;
+            opacity: 0.8;
+            margin-bottom: 55px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Footer */
+        footer {
+            padding: 55px 34px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-size: 34px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF1D6C 38.2%, #F5A623 61.8%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 21px;
+        }
+
+        .footer-text {
+            opacity: 0.6;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 55px;
+            }
+
+            .tagline {
+                font-size: 24px;
+            }
+
+            .subtitle {
+                font-size: 18px;
+            }
+
+            .section-title {
+                font-size: 34px;
+            }
+
+            .comparison-row {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-cell:nth-child(3) {
+                background: rgba(255, 29, 108, 0.2);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-logo">🖤🛣️ BackRoad</div>
+        <div id="auth-container">
+            <button class="auth-button" id="sign-in-btn">Sign In</button>
+            <div class="user-profile" id="user-profile" style="display: none;">
+                <img class="user-avatar" id="user-avatar" src="" alt="User">
+                <span class="user-name" id="user-name"></span>
+                <button class="auth-button" id="sign-out-btn" style="margin-left: 13px;">Sign Out</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Clerk Modal -->
+    <div class="clerk-modal" id="clerk-modal">
+        <div id="clerk-mount-point"></div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="logo">🖤🛣️ BackRoad</div>
+            <h1 class="tagline">Depth Over Engagement</h1>
+            <p class="subtitle">A social platform for meaningful connections, not vanity metrics</p>
+            <div class="cta-group">
+                <a href="#waitlist" class="btn btn-primary">Join Waitlist</a>
+                <a href="#manifesto" class="btn btn-secondary">Read Manifesto</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <h2 class="section-title">Why BackRoad is Different</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h3 class="feature-title">Deep Conversations</h3>
+                <p class="feature-desc">Threaded discussions that go deep, not quick reactions that go viral. Like old forums, but beautiful.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h3 class="feature-title">Personal Knowledge Base</h3>
+                <p class="feature-desc">Build your wiki as you learn. Share knowledge, not hot takes. Actual value, not noise.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3 class="feature-title">Zero-Knowledge Privacy</h3>
+                <p class="feature-desc">End-to-end encryption. No tracking. No data mining. No surveillance capitalism.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🚫</div>
+                <h3 class="feature-title">No Vanity Metrics</h3>
+                <p class="feature-desc">No likes. No follower counts. No views. Just meaningful interactions that matter.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">Edge-First Performance</h3>
+                <p class="feature-desc">Global CDN. <50ms latency. Works offline. Respects your time and bandwidth.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3 class="feature-title">Open & Interoperable</h3>
+                <p class="feature-desc">Export your data anytime. RSS feeds for everything. Federation-ready. You own your content.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section class="comparison">
+        <h2 class="section-title">BackRoad vs. Traditional Social</h2>
+        <div class="comparison-table">
+            <div class="comparison-row">
+                <div class="comparison-cell comparison-header">Feature</div>
+                <div class="comparison-cell comparison-header">Traditional Social</div>
+                <div class="comparison-cell comparison-header">BackRoad</div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Like/Follower Counts</div>
+                <div class="comparison-cell"><span class="check">✓</span> Everywhere</div>
+                <div class="comparison-cell"><span class="cross">✗</span> Hidden</div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Algorithmic Feed</div>
+                <div class="comparison-cell"><span class="check">✓</span> Manipulative</div>
+                <div class="comparison-cell"><span class="cross">✗</span> Chronological</div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Infinite Scroll</div>
+                <div class="comparison-cell"><span class="check">✓</span> Time-wasting</div>
+                <div class="comparison-cell"><span class="cross">✗</span> Intentional</div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Data Tracking</div>
+                <div class="comparison-cell"><span class="check">✓</span> Surveillance</div>
+                <div class="comparison-cell"><span class="cross">✗</span> Private</div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Ads</div>
+                <div class="comparison-cell"><span class="check">✓</span> Everywhere</div>
+                <div class="comparison-cell"><span class="cross">✗</span> None</div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Deep Conversations</div>
+                <div class="comparison-cell"><span class="cross">✗</span> Rare</div>
+                <div class="comparison-cell"><span class="check">✓</span> Core Feature</div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Knowledge Building</div>
+                <div class="comparison-cell"><span class="cross">✗</span> Not supported</div>
+                <div class="comparison-cell"><span class="check">✓</span> Built-in</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section" id="waitlist">
+        <h2 class="cta-title">Ready for Something Better?</h2>
+        <p class="cta-text">Join the waitlist for BackRoad. We're launching early 2026 with a community of people who value depth over engagement.</p>
+        <div class="cta-group">
+            <a href="mailto:blackroad.systems@gmail.com?subject=BackRoad Waitlist" class="btn btn-primary">Join Waitlist</a>
+            <a href="MANIFESTO.md" class="btn btn-secondary" id="manifesto">Read Full Manifesto</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-logo">🖤🛣️ BackRoad</div>
+        <p class="footer-text">Built by BlackRoad OS, Inc. | Making technology that respects humans</p>
+        <p class="footer-text" style="margin-top: 13px; opacity: 0.4;">
+            Take the scenic route. Have real conversations. Build something meaningful.
+        </p>
+    </footer>
+
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Add subtle animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
+        });
+
+        // Clerk Authentication Integration
+        const CLERK_PUBLISHABLE_KEY = 'pk_test_YOUR_KEY_HERE';  // Replace with actual key
+
+        window.addEventListener('load', async () => {
+            try {
+                await Clerk.load({ publishableKey: CLERK_PUBLISHABLE_KEY });
+
+                const signInBtn = document.getElementById('sign-in-btn');
+                const signOutBtn = document.getElementById('sign-out-btn');
+                const userProfile = document.getElementById('user-profile');
+                const clerkModal = document.getElementById('clerk-modal');
+
+                // Check auth state
+                if (Clerk.user) {
+                    showUserProfile(Clerk.user);
+                }
+
+                // Sign in button
+                signInBtn.addEventListener('click', () => {
+                    clerkModal.classList.add('show');
+                    Clerk.mountSignIn(document.getElementById('clerk-mount-point'), {
+                        appearance: {
+                            variables: {
+                                colorPrimary: '#FF1D6C',
+                                colorBackground: '#1a1a1a',
+                                colorText: '#ffffff',
+                                colorInputBackground: '#0a0a0a',
+                                colorInputText: '#ffffff',
+                                fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                                borderRadius: '13px'
+                            }
+                        },
+                        afterSignInUrl: window.location.href,
+                        afterSignUpUrl: window.location.href
+                    });
+                });
+
+                // Sign out button
+                signOutBtn.addEventListener('click', async () => {
+                    await Clerk.signOut();
+                    hideUserProfile();
+                });
+
+                // Listen for auth changes
+                Clerk.addListener((session) => {
+                    if (session) {
+                        showUserProfile(Clerk.user);
+                        clerkModal.classList.remove('show');
+                    } else {
+                        hideUserProfile();
+                    }
+                });
+
+                // Close modal on click outside
+                clerkModal.addEventListener('click', (e) => {
+                    if (e.target === clerkModal) {
+                        clerkModal.classList.remove('show');
+                    }
+                });
+
+            } catch (error) {
+                console.warn('Clerk not configured:', error);
+                // Graceful fallback - hide auth button
+                document.getElementById('auth-container').style.opacity = '0.5';
+            }
+        });
+
+        function showUserProfile(user) {
+            document.getElementById('sign-in-btn').style.display = 'none';
+            document.getElementById('user-profile').style.display = 'flex';
+            document.getElementById('user-avatar').src = user.imageUrl;
+            document.getElementById('user-name').textContent = user.fullName || user.username || user.primaryEmailAddress?.emailAddress;
+        }
+
+        function hideUserProfile() {
+            document.getElementById('sign-in-btn').style.display = 'block';
+            document.getElementById('user-profile').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
