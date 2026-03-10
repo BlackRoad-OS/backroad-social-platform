@@ -4,6 +4,8 @@ const request = require('supertest');
 const path = require('path');
 const fs = require('fs');
 
+// Use test environment so rate limiting is bypassed
+process.env.NODE_ENV = 'test';
 // Use a temp database for tests
 process.env.DB_PATH = path.join(__dirname, '..', 'test.db');
 

@@ -12,6 +12,7 @@
     "bcryptjs": "^3.0.2",
     "better-sqlite3": "^11.8.1",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
     "express-session": "^1.18.1"
   },
   "devDependencies": {
@@ -20,6 +21,8 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "testMatch": ["**/tests/**/*.test.js"]
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
   }
 }

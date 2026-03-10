@@ -2,6 +2,7 @@
 
 const express = require('express');
 const session = require('express-session');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 const authRoutes = require('./routes/auth');
@@ -10,6 +11,26 @@ const communitiesRoutes = require('./routes/communities');
 const knowledgeRoutes = require('./routes/knowledge');
 const readingRoutes = require('./routes/reading');
 const messagesRoutes = require('./routes/messages');
+
+// Stricter limiter for auth endpoints to slow brute-force attempts
+const authLimiter = process.env.NODE_ENV === 'test'
+  ? (req, res, next) => next()
+  : rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 20,
+      standardHeaders: true,
+      legacyHeaders: false
+    });
+
+// General API limiter
+const apiLimiter = process.env.NODE_ENV === 'test'
+  ? (req, res, next) => next()
+  : rateLimit({
+      windowMs: 60 * 1000, // 1 minute
+      max: 120,
+      standardHeaders: true,
+      legacyHeaders: false
+    });
 
 function createApp() {
   const app = express();
@@ -23,6 +44,9 @@ function createApp() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
+      // sameSite 'strict' prevents the cookie from being sent on cross-site
+      // requests, which is the primary CSRF mitigation for session cookies.
+      sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     }
@@ -31,13 +55,13 @@ function createApp() {
   // Serve the landing page and static assets
   app.use(express.static(path.join(__dirname, '..', 'public')));
 
-  // API routes
-  app.use('/auth', authRoutes);
-  app.use('/posts', postsRoutes);
-  app.use('/communities', communitiesRoutes);
-  app.use('/knowledge', knowledgeRoutes);
-  app.use('/reading', readingRoutes);
-  app.use('/messages', messagesRoutes);
+  // API routes — auth endpoints get a stricter rate limiter
+  app.use('/auth', authLimiter, authRoutes);
+  app.use('/posts', apiLimiter, postsRoutes);
+  app.use('/communities', apiLimiter, communitiesRoutes);
+  app.use('/knowledge', apiLimiter, knowledgeRoutes);
+  app.use('/reading', apiLimiter, readingRoutes);
+  app.use('/messages', apiLimiter, messagesRoutes);
 
   // Serve index.html for the root
   app.get('/', (req, res) => {
